@@ -6,9 +6,14 @@ from app.database import Base, engine
 from app.models import (
     Activity,
     ActivityAssessment,
+    Evidence,
+    FutureResponsibility,
     Process,
     Role,
+    RoleSkill,
+    Skill,
 )
+
 
 
 @asynccontextmanager
