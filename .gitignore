@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+rolefuture.db
+.env
+.pytest_cache/
