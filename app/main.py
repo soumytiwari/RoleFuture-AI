@@ -1,9 +1,27 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
+
+from app.database import Base, engine
+from app.models import (
+    Activity,
+    ActivityAssessment,
+    Process,
+    Role,
+)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
 
 app = FastAPI(
     title="RoleFuture AI",
     description="Role-level AI intelligence and future workforce analysis",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 
