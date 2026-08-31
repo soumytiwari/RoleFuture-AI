@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2933;
+        }
+
+        header {
+            padding: 24px 40px;
+            background: #172554;
+            color: white;
+        }
+
+        header a {
+            color: white;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 32px auto;
+            padding: 0 20px;
+        }
+
+        .controls,
+        .results {
+            background: white;
+            padding: 24px;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #00000012;
+        }
+
+        .controls {
+            display: flex;
+            gap: 16px;
+            align-items: end;
+        }
+
+        label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+
+        select,
+        button {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 6px;
+            background: #1d4ed8;
+            color: white;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: #eef2ff;
+        }
+
+        .error {
+            color: #b91c1c;
+        }
+
+        @media (max-width: 700px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <p><a href="/">← Back to dashboard</a></p>
+        <h1>Compare roles</h1>
+    </header>
+
+    <main>
+        <section class="controls">
+            <label>
+                Role 1
+                <select id="role-1"></select>
+            </label>
+
+            <label>
+                Role 2
+                <select id="role-2"></select>
+            </label>
+
+            <button id="compare-button">Compare</button>
+        </section>
+
+        <p id="message"></p>
+
+        <section class="results">
+            <h2>Comparison results</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th id="role-1-heading">Role 1</th>
+                        <th id="role-2-heading">Role 2</th>
+                    </tr>
+                </thead>
+                <tbody id="comparison-body">
+                    <tr>
+                        <td colspan="3">Select two roles and click Compare.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <script>
+        const roleOneSelect = document.getElementById("role-1");
+        const roleTwoSelect = document.getElementById("role-2");
+        const compareButton = document.getElementById("compare-button");
+        const message = document.getElementById("message");
+        const comparisonBody = document.getElementById("comparison-body");
+
+        async function loadRoles() {
+            const response = await fetch("/api/roles");
+
+            if (!response.ok) {
+                throw new Error("Could not load roles.");
+            }
+
+            const roles = await response.json();
+
+            roles.forEach((role) => {
+                const optionOne = new Option(role.title, role.id);
+                const optionTwo = new Option(role.title, role.id);
+
+                roleOneSelect.add(optionOne);
+                roleTwoSelect.add(optionTwo);
+            });
+
+            if (roles.length > 1) {
+                roleTwoSelect.selectedIndex = 1;
+            }
+        }
+
+        async function compareRoles() {
+            message.textContent = "Loading comparison...";
+            message.className = "";
+
+            const roleOneId = roleOneSelect.value;
+            const roleTwoId = roleTwoSelect.value;
+
+            const response = await fetch(
+                `/api/compare?role_1_id=${roleOneId}&role_2_id=${roleTwoId}`
+            );
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.detail || "Comparison failed.");
+            }
+
+            document.getElementById("role-1-heading").textContent =
+                result.role_1.title;
+
+            document.getElementById("role-2-heading").textContent =
+                result.role_2.title;
+
+            const roleOne = result.role_1;
+            const roleTwo = result.role_2;
+
+            comparisonBody.innerHTML = `
+                <tr>
+                    <td>Average exposure</td>
+                    <td>${roleOne.average_exposure}</td>
+                    <td>${roleTwo.average_exposure}</td>
+                </tr>
+                <tr>
+                    <td>Average automation</td>
+                    <td>${roleOne.average_automation}</td>
+                    <td>${roleTwo.average_automation}</td>
+                </tr>
+                <tr>
+                    <td>Average augmentation</td>
+                    <td>${roleOne.average_augmentation}</td>
+                    <td>${roleTwo.average_augmentation}</td>
+                </tr>
+                <tr>
+                    <td>Activities analysed</td>
+                    <td>${roleOne.activity_count}</td>
+                    <td>${roleTwo.activity_count}</td>
+                </tr>
+                <tr>
+                    <td>High-exposure activities</td>
+                    <td>${roleOne.high_exposure_count}</td>
+                    <td>${roleTwo.high_exposure_count}</td>
+                </tr>
+                <tr>
+                    <td>Exposure difference</td>
+                    <td colspan="2">${result.differences.exposure}</td>
+                </tr>
+            `;
+
+            message.textContent = "";
+        }
+
+        compareButton.addEventListener("click", async () => {
+            try {
+                await compareRoles();
+            } catch (error) {
+                message.textContent = error.message;
+                message.className = "error";
+            }
+        });
+
+        loadRoles().catch((error) => {
+            message.textContent = error.message;
+            message.className = "error";
+        });
+    </script>
+</body>
+</html>

@@ -27,3 +27,14 @@ def role_detail_page(request: Request, role_id: int):
             "role_id": role_id,
         },
     )
+
+
+@router.get("/compare")
+def comparison_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="compare.html",
+        context={
+            "page_title": "Compare Roles",
+        },
+    )
