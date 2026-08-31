@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 from typing import Any
+from datetime import datetime, timezone
+from app.models import ActivityAssessment
 
 
 @dataclass
@@ -181,3 +183,45 @@ def calculate_activity_score(assessment: Any) -> ActivityScore:
         impact_type=impact_type,
         reasoning=reasoning,
     )
+
+# here we saving the assessment to the database after calculating the score
+
+def analyze_and_save_assessment(db, assessment):
+    """Calculate an assessment and save the results to SQLite."""
+
+    result = calculate_activity_score(assessment)
+
+    assessment.exposure_score = result.exposure_score
+    assessment.automation_score = result.automation_score
+    assessment.augmentation_score = result.augmentation_score
+    assessment.exposure_category = result.exposure_category
+    assessment.impact_type = result.impact_type
+    assessment.reasoning = result.reasoning
+    assessment.analyzed_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(assessment)
+
+    return assessment
+
+
+def analyze_all_assessments(db):
+    """Calculate and save every activity assessment."""
+
+    assessments = db.query(ActivityAssessment).all()
+
+    for assessment in assessments:
+        result = calculate_activity_score(assessment)
+
+        assessment.exposure_score = result.exposure_score
+        assessment.automation_score = result.automation_score
+        assessment.augmentation_score = result.augmentation_score
+        assessment.exposure_category = result.exposure_category
+        assessment.impact_type = result.impact_type
+        assessment.reasoning = result.reasoning
+        assessment.analyzed_at = datetime.now(timezone.utc)
+
+    db.commit()
+
+    return assessments
+
