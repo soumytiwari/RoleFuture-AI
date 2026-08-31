@@ -19,6 +19,7 @@ Role
             ├── Automation potential
             ├── Augmentation potential
             └── Impact classification
+```
 
 ## Assessment Factors
 
@@ -38,6 +39,7 @@ For factors that reduce AI exposure, the scoring engine reverses the value:
 
 ```text
 Adjusted value = 6 - original value
+```
 
 This applies to:
 - Human judgement requirement
@@ -52,6 +54,7 @@ Each factor is converted from the 1–5 scale to a 0–100 scale:
 
 ```text
 Normalized score = ((factor value - 1) / 4) × 100
+```
 
 The final exposure score is: 
 
@@ -64,6 +67,7 @@ Average of:
 - Reversed human judgment
 - Reversed physical dependency
 - Reversed sensitivity and complexity
+```
 
 ## Exposure Categories
 
@@ -83,6 +87,7 @@ Automation potential uses the following weighted formula:
 25% Digital data availability
 25% Rule-based potential
 20% Language intensity
+```
 
 This score is higher when an activity is repetitive, digital, structured, and suitable for predictable processing.
 
@@ -95,6 +100,7 @@ Augmentation potential uses the following weighted formula:
 35% Human judgment requirement
 20% Digital data availability
 20% Rule-based potential
+```
 
 This score represents the potential for AI to assist a person with analysis, preparation, drafting, detection, or recommendations while human judgment remains involved.
 
@@ -158,5 +164,3 @@ The scoring engine calculates the main results in Python. Any future language-mo
 The quality of the analysis depends on the quality of the role and activity data. The current dataset represents common corporate-service activities and does not represent every organization.
 
 The scoring model is transparent and consistent, but it is not a labour-market prediction model. It should support workforce planning and reskilling discussions rather than replace professional judgment.
-
-EOF
