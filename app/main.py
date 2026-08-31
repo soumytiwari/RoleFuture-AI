@@ -14,6 +14,7 @@ from app.models import (
     Skill,
 )
 
+from app.routes.analysis import router as analysis_router
 
 
 @asynccontextmanager
@@ -28,6 +29,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+app.include_router(analysis_router)
 
 
 @app.get("/api/health")
