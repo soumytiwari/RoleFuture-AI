@@ -19,6 +19,18 @@
             color: white;
         }
 
+        nav {
+            margin-bottom: 16px;
+        }
+
+        .nav-link {
+            margin-right: 18px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+
         main {
             max-width: 1100px;
             margin: 32px auto;
@@ -95,12 +107,15 @@
 </head>
 <body>
     <header>
-        <p>
-            <a href="/">← Back to dashboard</a>
-        </p>
+        <nav>
+            <a href="/" class="nav-link">Dashboard</a>
+            <a href="/compare" class="nav-link">Compare roles</a>
+        </nav>
+
         <h1 id="role-title">Loading role...</h1>
         <p id="role-department"></p>
     </header>
+
 
     <main>
         <p id="error-message" class="error"></p>

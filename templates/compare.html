@@ -19,6 +19,18 @@
             color: white;
         }
 
+        nav {
+            margin-bottom: 16px;
+        }
+
+        .nav-link {
+            margin-right: 18px;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+
         header a {
             color: white;
         }
@@ -95,9 +107,14 @@
 </head>
 <body>
     <header>
-        <p><a href="/">← Back to dashboard</a></p>
+        <nav>
+            <a href="/" class="nav-link">Dashboard</a>
+            <a href="/compare" class="nav-link">Compare roles</a>
+        </nav>
+
         <h1>Compare roles</h1>
     </header>
+
 
     <main>
         <section class="controls">
