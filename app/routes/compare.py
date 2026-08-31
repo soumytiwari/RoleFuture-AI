@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException
 
 from app.database import SessionLocal
 from app.models import Role
-from app.services.scoring import calculate_role_analysis
-
+from app.services.comparison import compare_roles as compare_role_data
+from app.services.explanation import generate_comparison_explanation
 
 router = APIRouter(prefix="/api", tags=["comparison"])
 
@@ -17,68 +17,50 @@ def compare_roles(role_1_id: int, role_2_id: int):
         )
 
     db = SessionLocal()
-
     try:
-        role_1 = db.query(Role).filter(Role.id == role_1_id).first()
-        role_2 = db.query(Role).filter(Role.id == role_2_id).first()
+        try:
+            result = compare_role_data(db, role_1_id, role_2_id)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
 
-        if role_1 is None or role_2 is None:
+        if result is None:
             raise HTTPException(
                 status_code=404,
                 detail="One or both roles were not found.",
             )
 
-        try:
-            analysis_1 = calculate_role_analysis(db, role_1.id)
-            analysis_2 = calculate_role_analysis(db, role_2.id)
-        except ValueError as error:
+        return result
+    finally:
+        db.close()
+
+
+@router.get("/compare/explanation")
+def compare_explanation(role_1_id: int, role_2_id: int):
+    if role_1_id == role_2_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Please select two different roles.",
+        )
+
+    db = SessionLocal()
+    try:
+        comparison = compare_role_data(db, role_1_id, role_2_id)
+        if comparison is None:
             raise HTTPException(
-                status_code=400,
-                detail=str(error),
+                status_code=404,
+                detail="One or both roles were not found.",
             )
 
-        exposure_difference = round(
-            analysis_2.average_exposure - analysis_1.average_exposure,
-            2,
-        )
-
-        automation_difference = round(
-            analysis_2.average_automation - analysis_1.average_automation,
-            2,
-        )
-
-        augmentation_difference = round(
-            analysis_2.average_augmentation - analysis_1.average_augmentation,
-            2,
-        )
-
         return {
-            "role_1": {
-                "id": role_1.id,
-                "title": role_1.title,
-                "department": role_1.department,
-                "average_exposure": analysis_1.average_exposure,
-                "average_automation": analysis_1.average_automation,
-                "average_augmentation": analysis_1.average_augmentation,
-                "activity_count": analysis_1.activity_count,
-                "high_exposure_count": analysis_1.high_exposure_count,
-            },
-            "role_2": {
-                "id": role_2.id,
-                "title": role_2.title,
-                "department": role_2.department,
-                "average_exposure": analysis_2.average_exposure,
-                "average_automation": analysis_2.average_automation,
-                "average_augmentation": analysis_2.average_augmentation,
-                "activity_count": analysis_2.activity_count,
-                "high_exposure_count": analysis_2.high_exposure_count,
-            },
-            "differences": {
-                "exposure": exposure_difference,
-                "automation": automation_difference,
-                "augmentation": augmentation_difference,
-            },
+            **generate_comparison_explanation(
+                {
+                    **comparison,
+                    "role_1_future_skills": comparison["role_1"]["future_skills"],
+                    "role_2_future_skills": comparison["role_2"]["future_skills"],
+                }
+            ),
+            "role_1_id": role_1_id,
+            "role_2_id": role_2_id,
         }
-
     finally:
         db.close()

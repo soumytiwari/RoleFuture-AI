@@ -6,24 +6,33 @@ RoleFuture AI assesses how artificial intelligence may affect business roles by 
 
 The system does not predict that a complete job will disappear. It estimates which activities may be automated, augmented, or remain primarily human-led.
 
-## Analysis Structure
-
-Each role is analysed through the following hierarchy:
+## Analysis hierarchy
 
 ```text
 Role
-└── Processes
-    └── Activities
-        └── Assessment factors
-            ├── AI exposure
-            ├── Automation potential
-            ├── Augmentation potential
-            └── Impact classification
+↓
+Processes
+↓
+Activities
+↓
+Current skills
+↓
+Assessment factors
+↓
+AI exposure
+↓
+Activities automated / augmented
+↓
+New responsibilities
+↓
+Future skills
+↓
+Future role profile
 ```
 
-## Assessment Factors
+## Assessment factors
 
-Every activity is assessed on a scale from 1 to 5:
+Every activity is assessed from 1 to 5 across:
 
 - Repetitiveness
 - Digital data availability
@@ -33,44 +42,29 @@ Every activity is assessed on a scale from 1 to 5:
 - Physical dependency
 - Sensitivity and stakeholder complexity
 
-A score of 1 represents a low presence of the factor and 5 represents a high presence.
+Higher values increase exposure for the first four dimensions. Human judgment, physical dependency, and sensitivity/complexity are reversed when calculating direct exposure because higher values make full automation less likely.
 
-For factors that reduce AI exposure, the scoring engine reverses the value:
+## Exposure score
 
-```text
-Adjusted value = 6 - original value
-```
-
-This applies to:
-
-- Human judgment requirement
-- Physical dependency
-- Sensitivity and complexity
-
-## Exposure Score
-
-The exposure score is the average of all seven normalized factors.
-
-Each factor is converted from the 1–5 scale to a 0–100 scale:
+Each factor is normalised to 0–100:
 
 ```text
-Normalized score = ((factor value - 1) / 4) × 100
+Normalised = ((factor - 1) / 4) × 100
 ```
 
-The final exposure score is:
+The exposure score is the average of:
 
 ```text
-Average of:
-- Repetitiveness
-- Digital data availability
-- Rule-based potential
-- Language intensity
-- Reversed human judgment
-- Reversed physical dependency
-- Reversed sensitivity and complexity
+Repetitiveness
+Digital data availability
+Rule-based potential
+Language intensity
+Reversed human judgment
+Reversed physical dependency
+Reversed sensitivity/complexity
 ```
 
-## Exposure Categories
+Categories:
 
 | Score | Category |
 |---:|---|
@@ -79,9 +73,7 @@ Average of:
 | 50–74.99 | High |
 | 75–100 | Very High |
 
-## Automation Score
-
-Automation potential uses the following weighted formula:
+## Automation potential
 
 ```text
 30% Repetitiveness
@@ -90,11 +82,7 @@ Automation potential uses the following weighted formula:
 20% Language intensity
 ```
 
-This score is higher when an activity is repetitive, digital, structured, and suitable for predictable processing.
-
-## Augmentation Score
-
-Augmentation potential uses the following weighted formula:
+## Augmentation potential
 
 ```text
 25% Language intensity
@@ -103,66 +91,54 @@ Augmentation potential uses the following weighted formula:
 20% Rule-based potential
 ```
 
-This score represents the potential for AI to assist a person with analysis, preparation, drafting, detection, or recommendations while human judgment remains involved.
+## Impact classification
 
-## Impact Classification
+The engine applies the same rules to every activity:
 
-The application classifies each activity using these rules:
+1. Exposure below 30 → `Primarily Human-Led`.
+2. Automation at least 10 points above augmentation → `Automated`.
+3. Augmentation equal to or above automation → `Augmented`.
+4. Otherwise → `Primarily Human-Led`.
 
-1. If exposure is below 30, the activity is classified as `Primarily Human-Led`.
-2. If automation is at least 10 points higher than augmentation, the activity is classified as `Automated`.
-3. If augmentation is equal to or higher than automation, the activity is classified as `Augmented`.
-4. Otherwise, the activity is classified as `Primarily Human-Led`.
+These classifications are analytical indicators, not predictions of job loss.
 
-## Role-Level Analysis
+## Role-level change score
 
-Role-level metrics are calculated from the activities belonging to that role:
+Role ranking combines the underlying activity results:
 
-- Activity count
-- Average exposure score
-- Average automation score
-- Average augmentation score
-- Number of high or very-high exposure activities
+```text
+Role Change Score =
+    0.50 × Average Exposure
+  + 0.30 × Average Automation
+  + 0.20 × High Exposure Ratio × 100
+```
 
-The dashboard and ranking views use these stored activity-level results rather than hard-coded role outputs.
+This produces a comparable score for every role using the same method.
 
-## Explainability
+## AI explanation layer
 
-Each activity result includes:
+The local language model does not calculate the numerical results. It receives structured application facts that include the role, activity scores, classifications, current/future skills, and future responsibilities.
 
-- The original assessment factors
-- Calculated scores
-- Exposure category
-- Impact classification
-- Rule-based reasoning
+Its output is limited to explanation and synthesis:
 
-The reasoning explains which factors influenced the result. It is an assessment rationale, not hidden model reasoning.
+- Overall impact summary
+- Activities AI may automate
+- Activities AI may augment
+- Human responsibilities
+- Future skills
+- Future role profile
+- Transformation drivers
 
-## Data Traceability
+The response must be valid JSON. The application uses a deterministic fallback when the local model is unavailable.
 
-The application stores:
+## Traceability
 
-- Roles
-- Processes
-- Activities
-- Assessment factors
-- Calculated results
-- Skills
-- Future responsibilities
-- Evidence or supporting assumptions where available
+The UI exposes the original 1–5 assessment factors, calculated scores, exposure category, impact classification, and assessment rationale. This is the project's explainability mechanism. It shows the inputs and conclusions used by the application without presenting hidden model chain-of-thought.
 
-The scoring engine calculates the main results in Python. Any future language-model integration will only explain or summarize these structured results and will not control the core scores.
+## Assumptions and limitations
 
-## Assumptions
-
-- AI impact is assessed at activity level rather than job-title level.
-- AI impact generally transforms tasks rather than eliminating complete roles.
-- The scores are indicative analytical assessments, not statistically validated forecasts.
-- The same activity may have different results in organizations with different technology maturity, data quality, controls, or regulations.
-- Human review remains important for sensitive, complex, accountable, or stakeholder-facing work.
-
-## Limitations
-
-The quality of the analysis depends on the quality of the role and activity data. The current dataset represents common corporate-service activities and does not represent every organization.
-
-The scoring model is transparent and consistent, but it is not a labour-market prediction model. It should support workforce planning and reskilling discussions rather than replace professional judgment.
+- AI impact is assessed at activity level rather than only by job title.
+- AI usually transforms tasks rather than eliminating a complete role.
+- The same activity may have different outcomes in different organisations depending on data quality, controls, technology maturity, regulation, and adoption.
+- The scoring model is transparent but not statistically validated as a labour-market forecast.
+- The dataset represents representative corporate-service work and is not intended to describe every organisation.

@@ -4,322 +4,239 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page_title }}</title>
-
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            color: #1f2933;
-        }
-
-        header {
-            padding: 24px 40px;
-            background: #172554;
-            color: white;
-        }
-
-        nav {
-            margin-bottom: 16px;
-        }
-
-        .nav-link {
-            margin-right: 18px;
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-
-        main {
-            max-width: 1100px;
-            margin: 32px auto;
-            padding: 0 20px;
-        }
-
-        a {
-            color: #1d4ed8;
-        }
-
-        header a {
-            color: white;
-        }
-
-        .summary,
-        .process,
-        .activity {
-            background: white;
-            padding: 20px;
-            margin: 16px 0;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px #00000012;
-        }
-
-        .metrics {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin: 24px 0;
-        }
-
-        .metric {
-            background: #eef2ff;
-            padding: 18px;
-            border-radius: 8px;
-        }
-
-        .metric h3 {
-            margin: 0 0 8px;
-            font-size: 14px;
-        }
-
-        .metric p {
-            margin: 0;
-            font-size: 24px;
-            font-weight: bold;
-            color: #172554;
-        }
-
-        .activity {
-            border-left: 5px solid #4f46e5;
-        }
-
-        .error {
-            color: #b91c1c;
-        }
-
-        @media (max-width: 800px) {
-            .metrics {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 500px) {
-            .metrics {
-                grid-template-columns: 1fr;
-            }
-
-            header {
-                padding: 20px;
-            }
-        }
+        :root { --navy:#172554; --ink:#1f2937; --muted:#64748b; --bg:#f4f6f8; --card:#fff; --border:#e2e8f0; --accent:#4f46e5; }
+        * { box-sizing: border-box; }
+        body { margin:0; font-family:Arial,sans-serif; background:var(--bg); color:var(--ink); }
+        header { padding:24px 40px; background:var(--navy); color:white; }
+        nav { margin-bottom:18px; } .nav-link { margin-right:18px; color:white; text-decoration:none; font-weight:bold; }
+        main { max-width:1180px; margin:32px auto; padding:0 20px 48px; }
+        a { color:#1d4ed8; } h1,h2,h3,h4 { color:var(--ink); }
+        header h1, header p { color:white; } header h1 { margin:0 0 8px; } header p { margin:0; }
+        .summary,.process,.activity,.ai-panel { background:var(--card); padding:20px; margin:16px 0; border-radius:12px; border:1px solid var(--border); box-shadow:0 2px 8px #0000000c; }
+        .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:24px 0; }
+        .metric { background:#eef2ff; padding:18px; border-radius:10px; }
+        .metric h3 { margin:0 0 8px; font-size:14px; color:#475569; } .metric p { margin:0; font-size:24px; font-weight:bold; color:var(--navy); }
+        .process { border-left:5px solid #818cf8; } .activity { border-left:5px solid var(--accent); }
+        .activity-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:12px 0; }
+        .mini { background:#f8fafc; padding:12px; border-radius:8px; border:1px solid var(--border); } .mini strong { display:block; font-size:13px; color:#64748b; margin-bottom:4px; }
+        .badge { display:inline-block; padding:4px 9px; border-radius:999px; font-size:12px; font-weight:bold; background:#e0e7ff; color:#3730a3; }
+        details { margin-top:12px; } summary { cursor:pointer; font-weight:bold; color:#334155; }
+        .bar { height:8px; border-radius:99px; background:#e2e8f0; overflow:hidden; margin-top:6px; } .bar span { display:block; height:100%; background:#6366f1; }
+        .ai-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; flex-wrap:wrap; } .ai-status { font-size:12px; color:var(--muted); }
+        .ai-section { margin-top:18px; } .ai-section h3 { margin-bottom:8px; } .ai-section ul { margin-top:6px; }
+        .source-note { padding:10px 12px; background:#f8fafc; border:1px solid var(--border); border-radius:8px; font-size:13px; color:#475569; }
+        .error { color:#b91c1c; } .success { color:#047857; }
+        button { background:var(--accent); color:white; border:0; border-radius:8px; padding:10px 14px; cursor:pointer; font-weight:bold; } button:disabled { opacity:.6; cursor:wait; }
+        .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        @media (max-width:800px) { .metrics,.activity-grid,.two-col { grid-template-columns:repeat(2,1fr); } }
+        @media (max-width:520px) { .metrics,.activity-grid,.two-col { grid-template-columns:1fr; } header { padding:20px; } }
     </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <a href="/" class="nav-link">Dashboard</a>
-            <a href="/compare" class="nav-link">Compare roles</a>
-        </nav>
+<header>
+    <nav>
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/compare" class="nav-link">Compare roles</a>
+    </nav>
+    <h1 id="role-title">Loading role...</h1>
+    <p id="role-department"></p>
+</header>
 
-        <h1 id="role-title">Loading role...</h1>
-        <p id="role-department"></p>
-    </header>
+<main>
+    <p id="error-message" class="error"></p>
 
+    <section class="summary">
+        <h2>Role profile</h2>
+        <p id="role-description">Loading...</p>
+        <h3>Stored future role profile</h3>
+        <p id="future-profile">Loading...</p>
+    </section>
 
-    <main>
-        <p id="error-message" class="error"></p>
+    <section class="metrics">
+        <div class="metric"><h3>Average Exposure</h3><p id="average-exposure">—</p></div>
+        <div class="metric"><h3>Average Automation</h3><p id="average-automation">—</p></div>
+        <div class="metric"><h3>Average Augmentation</h3><p id="average-augmentation">—</p></div>
+        <div class="metric"><h3>High-Exposure Activities</h3><p id="high-exposure-count">—</p></div>
+    </section>
 
-        <section class="summary">
-            <h2>Current role profile</h2>
-            <p id="role-description">Loading...</p>
-
-            <h2>Future role profile</h2>
-            <p id="future-profile">Loading...</p>
-        </section>
-
-        <section class="metrics">
-            <div class="metric">
-                <h3>Average Exposure</h3>
-                <p id="average-exposure">—</p>
+    <section class="ai-panel">
+        <div class="ai-header">
+            <div>
+                <h2>AI Workforce Analysis</h2>
+                <div class="ai-status" id="ai-source">Waiting for analysis...</div>
             </div>
+            <button id="refresh-ai">Generate AI analysis</button>
+        </div>
+        <p class="source-note">The Python scoring engine determines the numerical scores and classifications. The local language model only explains those existing results; a deterministic fallback is used when Ollama is unavailable.</p>
+        <div id="ai-content"><p>Loading AI analysis...</p></div>
+    </section>
 
-            <div class="metric">
-                <h3>Average Automation</h3>
-                <p id="average-automation">—</p>
-            </div>
+    <section>
+        <h2>Current and future skills</h2>
+        <div class="two-col">
+            <div class="summary"><h3>Current skills</h3><ul id="current-skills"><li>Loading...</li></ul></div>
+            <div class="summary"><h3>Future skills</h3><ul id="future-skills"><li>Loading...</li></ul></div>
+        </div>
+    </section>
 
-            <div class="metric">
-                <h3>Average Augmentation</h3>
-                <p id="average-augmentation">—</p>
-            </div>
+    <section>
+        <h2>Processes and activities</h2>
+        <div id="processes">Loading...</div>
+    </section>
 
-            <div class="metric">
-                <h3>High-Exposure Activities</h3>
-                <p id="high-exposure-count">—</p>
-            </div>
-        </section>
+    <section class="summary">
+        <h2>Future responsibilities</h2>
+        <ul id="future-responsibilities"><li>Loading...</li></ul>
+    </section>
+</main>
 
-        <section>
-            <h2>Processes and activities</h2>
-            <div id="processes">Loading...</div>
-        </section>
+<script>
+    const roleId = Number("{{ role_id }}");
 
-        <section class="summary">
-            <h2>Future responsibilities</h2>
-            <ul id="future-responsibilities">
-                <li>Loading...</li>
-            </ul>
-        </section>
+    function escapeHtml(value) {
+        const div = document.createElement("div");
+        div.textContent = String(value ?? "");
+        return div.innerHTML;
+    }
 
-        <section class="summary">
-            <h2>Future skills</h2>
-            <ul id="future-skills">
-                <li>Loading...</li>
-            </ul>
-        </section>
+    function scoreBar(value) {
+        const safe = Math.max(0, Math.min(100, Number(value || 0)));
+        return `<div class="bar"><span style="width:${safe}%"></span></div>`;
+    }
 
-    </main>
+    function renderList(targetId, items, emptyText) {
+        const target = document.getElementById(targetId);
+        target.innerHTML = "";
+        if (!items || !items.length) {
+            target.innerHTML = `<li>${escapeHtml(emptyText)}</li>`;
+            return;
+        }
+        items.forEach((item) => {
+            const li = document.createElement("li");
+            li.textContent = typeof item === "string" ? item : (item.name || item.responsibility || item.description || "Unnamed item");
+            target.appendChild(li);
+        });
+    }
 
-    <script>
-        // const roleId = {{ role_id }};
-        const roleId = Number("{{ role_id }}");
-
-        async function loadRoleDetails() {
-            const errorMessage = document.getElementById("error-message");
-
-            try {
-                const roleResponse = await fetch(`/api/roles/${roleId}`);
-                const analysisResponse =
-                    await fetch(`/api/roles/${roleId}/analysis`);
-
-                if (!roleResponse.ok || !analysisResponse.ok) {
-                    throw new Error("Could not load role details.");
-                }
-
-                const role = await roleResponse.json();
-                const analysis = await analysisResponse.json();
-
-                document.getElementById("role-title").textContent =
-                    role.title;
-
-                document.getElementById("role-department").textContent =
-                    `${role.department} · ${role.industry}`;
-
-                document.getElementById("role-description").textContent =
-                    role.description || "No description available.";
-
-                document.getElementById("future-profile").textContent =
-                    role.future_profile || "No future profile available.";
-
-                const responsibilitiesList =
-                    document.getElementById("future-responsibilities");
-
-                responsibilitiesList.innerHTML = "";
-
-                const responsibilities = role.future_responsibilities || [];
-
-                if (responsibilities.length === 0) {
-                    responsibilitiesList.innerHTML =
-                        "<li>No future responsibilities available.</li>";
-                } else {
-                    responsibilities.forEach((item) => {
-                        const responsibility = document.createElement("li");
-
-                        if (typeof item === "string") {
-                            responsibility.textContent = item;
-                        } else {
-                            responsibility.textContent =
-                                item.responsibility || item.description || "Unnamed responsibility";
-                        }
-
-                        responsibilitiesList.appendChild(responsibility);
-                    });
-                }
-
-                const skillsList = document.getElementById("future-skills");
-
-                skillsList.innerHTML = "";
-
-                const futureSkills = role.future_skills || [];
-
-                if (futureSkills.length === 0) {
-                    skillsList.innerHTML = "<li>No future skills available.</li>";
-                } else {
-                    futureSkills.forEach((item) => {
-                        const skill = document.createElement("li");
-
-                        if (typeof item === "string") {
-                            skill.textContent = item;
-                        } else {
-                            skill.textContent = item.name || "Unnamed skill";
-                        }
-
-                        skillsList.appendChild(skill);
-                    });
-                }
-
-
-                document.getElementById("average-exposure").textContent =
-                    analysis.average_exposure;
-
-                document.getElementById("average-automation").textContent =
-                    analysis.average_automation;
-
-                document.getElementById("average-augmentation").textContent =
-                    analysis.average_augmentation;
-
-                document.getElementById("high-exposure-count").textContent =
-                    analysis.high_exposure_count;
-
-                const processesContainer =
-                    document.getElementById("processes");
-
-                processesContainer.innerHTML = "";
-
-                role.processes.forEach((process) => {
-                    const processElement = document.createElement("section");
-                    processElement.className = "process";
-
-                    processElement.innerHTML = `
-                        <h3>${process.name}</h3>
-                        <p>${process.description || ""}</p>
-                    `;
-
-                    process.activities.forEach((activity) => {
-                        const assessment = activity.assessment;
-
-                        const activityElement =
-                            document.createElement("article");
-
-                        activityElement.className = "activity";
-
-                        activityElement.innerHTML = `
-                            <h4>${activity.name}</h4>
-                            <p>${activity.description || ""}</p>
-                            <p>
-                                <strong>Frequency:</strong>
-                                ${activity.frequency || "Not specified"}
-                            </p>
-                            <p>
-                                <strong>Exposure:</strong>
-                                ${assessment.exposure_score}/100
-                            </p>
-                            <p>
-                                <strong>Category:</strong>
-                                ${assessment.exposure_category}
-                            </p>
-                            <p>
-                                <strong>Likely impact:</strong>
-                                ${assessment.impact_type}
-                            </p>
-                            <p>
-                                <strong>Reasoning:</strong>
-                                ${assessment.reasoning}
-                            </p>
-                        `;
-
-                        processElement.appendChild(activityElement);
-                    });
-
-                    processesContainer.appendChild(processElement);
-                });
-            } catch (error) {
-                errorMessage.textContent = error.message;
-            }
+    function renderActivity(activity) {
+        const assessment = activity.assessment;
+        const article = document.createElement("article");
+        article.className = "activity";
+        if (!assessment) {
+            article.innerHTML = `<h4>${escapeHtml(activity.name)}</h4><p>${escapeHtml(activity.description)}</p><p class="error">No assessment is available for this activity.</p>`;
+            return article;
         }
 
-        loadRoleDetails();
-    </script>
+        const factors = assessment.factors || {};
+        article.innerHTML = `
+            <h4>${escapeHtml(activity.name)}</h4>
+            <p>${escapeHtml(activity.description)}</p>
+            <p><strong>Frequency:</strong> ${escapeHtml(activity.frequency || "Not specified")}</p>
+            <div class="activity-grid">
+                <div class="mini"><strong>Exposure</strong>${assessment.exposure_score}/100 ${scoreBar(assessment.exposure_score)}</div>
+                <div class="mini"><strong>Automation</strong>${assessment.automation_score}/100 ${scoreBar(assessment.automation_score)}</div>
+                <div class="mini"><strong>Augmentation</strong>${assessment.augmentation_score}/100 ${scoreBar(assessment.augmentation_score)}</div>
+            </div>
+            <p><strong>Category:</strong> <span class="badge">${escapeHtml(assessment.exposure_category)}</span></p>
+            <p><strong>Likely impact:</strong> <span class="badge">${escapeHtml(assessment.impact_type)}</span></p>
+            <p><strong>Assessment rationale:</strong> ${escapeHtml(assessment.reasoning)}</p>
+            <details>
+                <summary>How was this calculated?</summary>
+                <div class="activity-grid">
+                    <div class="mini"><strong>Repetitiveness</strong>${factors.repetitiveness ?? "—"}/5</div>
+                    <div class="mini"><strong>Digital data</strong>${factors.digital_data_availability ?? "—"}/5</div>
+                    <div class="mini"><strong>Rule-based potential</strong>${factors.rule_based_potential ?? "—"}/5</div>
+                    <div class="mini"><strong>Language intensity</strong>${factors.language_intensity ?? "—"}/5</div>
+                    <div class="mini"><strong>Human judgment</strong>${factors.human_judgment_requirement ?? "—"}/5</div>
+                    <div class="mini"><strong>Physical dependency</strong>${factors.physical_dependency ?? "—"}/5</div>
+                    <div class="mini"><strong>Sensitivity / complexity</strong>${factors.sensitivity_complexity ?? "—"}/5</div>
+                </div>
+            </details>
+        `;
+        return article;
+    }
+
+    function renderProcesses(processes) {
+        const container = document.getElementById("processes");
+        container.innerHTML = "";
+        if (!processes || !processes.length) {
+            container.textContent = "No processes available.";
+            return;
+        }
+        processes.forEach((process) => {
+            const section = document.createElement("section");
+            section.className = "process";
+            section.innerHTML = `<h3>${escapeHtml(process.name)}</h3><p>${escapeHtml(process.description)}</p>`;
+            (process.activities || []).forEach((activity) => section.appendChild(renderActivity(activity)));
+            container.appendChild(section);
+        });
+    }
+
+    function renderAiSection(data) {
+        const content = document.getElementById("ai-content");
+        const result = data.explanation || {};
+        const list = (items) => (items || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("") || "<li>None identified from the supplied analysis.</li>";
+        content.innerHTML = `
+            <div class="ai-section"><h3>Overall impact</h3><p>${escapeHtml(result.overall_impact || "No summary returned.")}</p></div>
+            <div class="ai-section"><h3>Activities AI may automate</h3><ul>${list(result.automated_activities)}</ul></div>
+            <div class="ai-section"><h3>Activities AI may augment</h3><ul>${list(result.augmented_activities)}</ul></div>
+            <div class="ai-section"><h3>Human responsibilities that remain important</h3><ul>${list(result.human_responsibilities)}</ul></div>
+            <div class="ai-section"><h3>Future skills</h3><ul>${list(result.future_skills)}</ul></div>
+            <div class="ai-section"><h3>Future role profile</h3><p>${escapeHtml(result.future_role_profile || "No future profile returned.")}</p></div>
+            <div class="ai-section"><h3>Transformation drivers</h3><ul>${list(result.transformation_drivers)}</ul></div>
+        `;
+        const source = data.source === "local_ai" ? `Generated by local model: ${data.model || "configured Ollama model"}` : "Deterministic fallback explanation (local model unavailable)";
+        document.getElementById("ai-source").textContent = source;
+    }
+
+    async function loadAiAnalysis() {
+        const button = document.getElementById("refresh-ai");
+        button.disabled = true;
+        button.textContent = "Generating...";
+        try {
+            const response = await fetch(`/api/roles/${roleId}/explanation`);
+            if (!response.ok) throw new Error("Could not generate AI analysis.");
+            const data = await response.json();
+            renderAiSection(data);
+        } catch (error) {
+            document.getElementById("ai-content").innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+            document.getElementById("ai-source").textContent = "AI analysis failed";
+        } finally {
+            button.disabled = false;
+            button.textContent = "Generate AI analysis";
+        }
+    }
+
+    async function loadRoleDetails() {
+        const errorMessage = document.getElementById("error-message");
+        try {
+            const response = await fetch(`/api/roles/${roleId}`);
+            if (!response.ok) throw new Error("Could not load role details.");
+            const role = await response.json();
+
+            document.getElementById("role-title").textContent = role.title;
+            document.getElementById("role-department").textContent = `${role.department} · ${role.industry}`;
+            document.getElementById("role-description").textContent = role.description || "No description available.";
+            document.getElementById("future-profile").textContent = role.future_profile || "No stored future profile available.";
+            document.getElementById("average-exposure").textContent = `${role.analysis.average_exposure}/100`;
+            document.getElementById("average-automation").textContent = `${role.analysis.average_automation}/100`;
+            document.getElementById("average-augmentation").textContent = `${role.analysis.average_augmentation}/100`;
+            document.getElementById("high-exposure-count").textContent = role.analysis.high_exposure_count;
+
+            renderList("current-skills", role.current_skills, "No current skills recorded.");
+            renderList("future-skills", role.future_skills, "No future skills recorded.");
+            renderList("future-responsibilities", role.future_responsibilities, "No future responsibilities recorded.");
+            renderProcesses(role.processes);
+
+            loadAiAnalysis();
+        } catch (error) {
+            errorMessage.textContent = error.message;
+        }
+    }
+
+    document.getElementById("refresh-ai").addEventListener("click", loadAiAnalysis);
+    loadRoleDetails();
+</script>
 </body>
 </html>
