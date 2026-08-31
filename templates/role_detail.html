@@ -154,6 +154,21 @@
             <h2>Processes and activities</h2>
             <div id="processes">Loading...</div>
         </section>
+
+        <section class="summary">
+            <h2>Future responsibilities</h2>
+            <ul id="future-responsibilities">
+                <li>Loading...</li>
+            </ul>
+        </section>
+
+        <section class="summary">
+            <h2>Future skills</h2>
+            <ul id="future-skills">
+                <li>Loading...</li>
+            </ul>
+        </section>
+
     </main>
 
     <script>
@@ -186,6 +201,54 @@
 
                 document.getElementById("future-profile").textContent =
                     role.future_profile || "No future profile available.";
+
+                const responsibilitiesList =
+                    document.getElementById("future-responsibilities");
+
+                responsibilitiesList.innerHTML = "";
+
+                const responsibilities = role.future_responsibilities || [];
+
+                if (responsibilities.length === 0) {
+                    responsibilitiesList.innerHTML =
+                        "<li>No future responsibilities available.</li>";
+                } else {
+                    responsibilities.forEach((item) => {
+                        const responsibility = document.createElement("li");
+
+                        if (typeof item === "string") {
+                            responsibility.textContent = item;
+                        } else {
+                            responsibility.textContent =
+                                item.responsibility || item.description || "Unnamed responsibility";
+                        }
+
+                        responsibilitiesList.appendChild(responsibility);
+                    });
+                }
+
+                const skillsList = document.getElementById("future-skills");
+
+                skillsList.innerHTML = "";
+
+                const futureSkills = role.future_skills || [];
+
+                if (futureSkills.length === 0) {
+                    skillsList.innerHTML = "<li>No future skills available.</li>";
+                } else {
+                    futureSkills.forEach((item) => {
+                        const skill = document.createElement("li");
+
+                        if (typeof item === "string") {
+                            skill.textContent = item;
+                        } else {
+                            skill.textContent = item.name || "Unnamed skill";
+                        }
+
+                        skillsList.appendChild(skill);
+                    });
+                }
+
 
                 document.getElementById("average-exposure").textContent =
                     analysis.average_exposure;
