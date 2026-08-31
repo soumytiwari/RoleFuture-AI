@@ -2,10 +2,13 @@
 
 from dataclasses import dataclass
 from typing import Any
+
 from datetime import datetime, timezone
-from app.models import ActivityAssessment
+
+from app.models import ActivityAssessment, Activity, Process
 
 
+# Activity score is a structured representation of the calculated scores and classifications for an activity assessment.
 @dataclass
 class ActivityScore:
     exposure_score: float
@@ -225,3 +228,63 @@ def analyze_all_assessments(db):
 
     return assessments
 
+# Role Analysis is a structured representation of the aggregated scores and classifications for all activities in a role.
+@dataclass
+class RoleAnalysis:
+    role_id: int
+    activity_count: int
+    average_exposure: float
+    average_automation: float
+    average_augmentation: float
+    high_exposure_count: int
+
+# This function does not change the database. It reads the saved activity scores and creates a role summary.
+def calculate_role_analysis(db, role_id: int) -> RoleAnalysis:
+    """Calculate summary scores for one role."""
+
+    assessments = (
+        db.query(ActivityAssessment)
+        .join(Activity, ActivityAssessment.activity_id == Activity.id)
+        .join(Process, Activity.process_id == Process.id)
+        .filter(Process.role_id == role_id)
+        .all()
+    )
+
+    if not assessments:
+        raise ValueError(f"No assessments found for role {role_id}")
+
+    exposure_scores = [
+        assessment.exposure_score
+        for assessment in assessments
+        if assessment.exposure_score is not None
+    ]
+
+    automation_scores = [
+        assessment.automation_score
+        for assessment in assessments
+        if assessment.automation_score is not None
+    ]
+
+    augmentation_scores = [
+        assessment.augmentation_score
+        for assessment in assessments
+        if assessment.augmentation_score is not None
+    ]
+
+    high_exposure_count = sum(
+        assessment.exposure_category in {"High", "Very High"}
+        for assessment in assessments
+    )
+
+    return RoleAnalysis(
+        role_id=role_id,
+        activity_count=len(assessments),
+        average_exposure=round(sum(exposure_scores) / len(exposure_scores), 2),
+        average_automation=round(
+            sum(automation_scores) / len(automation_scores), 2
+        ),
+        average_augmentation=round(
+            sum(augmentation_scores) / len(augmentation_scores), 2
+        ),
+        high_exposure_count=high_exposure_count,
+    )
