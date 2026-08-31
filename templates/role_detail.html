@@ -4,16 +4,244 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page_title }}</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2933;
+        }
+
+        header {
+            padding: 24px 40px;
+            background: #172554;
+            color: white;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 32px auto;
+            padding: 0 20px;
+        }
+
+        a {
+            color: #1d4ed8;
+        }
+
+        header a {
+            color: white;
+        }
+
+        .summary,
+        .process,
+        .activity {
+            background: white;
+            padding: 20px;
+            margin: 16px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #00000012;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .metric {
+            background: #eef2ff;
+            padding: 18px;
+            border-radius: 8px;
+        }
+
+        .metric h3 {
+            margin: 0 0 8px;
+            font-size: 14px;
+        }
+
+        .metric p {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+            color: #172554;
+        }
+
+        .activity {
+            border-left: 5px solid #4f46e5;
+        }
+
+        .error {
+            color: #b91c1c;
+        }
+
+        @media (max-width: 800px) {
+            .metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 500px) {
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <p>
-        <a href="/">← Back to dashboard</a>
-    </p>
+    <header>
+        <p>
+            <a href="/">← Back to dashboard</a>
+        </p>
+        <h1 id="role-title">Loading role...</h1>
+        <p id="role-department"></p>
+    </header>
 
     <main>
-        <h1>Role details</h1>
-        <p>Role ID: {{ role_id }}</p>
-        <p>The role detail content will be added next.</p>
+        <p id="error-message" class="error"></p>
+
+        <section class="summary">
+            <h2>Current role profile</h2>
+            <p id="role-description">Loading...</p>
+
+            <h2>Future role profile</h2>
+            <p id="future-profile">Loading...</p>
+        </section>
+
+        <section class="metrics">
+            <div class="metric">
+                <h3>Average Exposure</h3>
+                <p id="average-exposure">—</p>
+            </div>
+
+            <div class="metric">
+                <h3>Average Automation</h3>
+                <p id="average-automation">—</p>
+            </div>
+
+            <div class="metric">
+                <h3>Average Augmentation</h3>
+                <p id="average-augmentation">—</p>
+            </div>
+
+            <div class="metric">
+                <h3>High-Exposure Activities</h3>
+                <p id="high-exposure-count">—</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Processes and activities</h2>
+            <div id="processes">Loading...</div>
+        </section>
     </main>
+
+    <script>
+        // const roleId = {{ role_id }};
+        const roleId = Number("{{ role_id }}");
+
+        async function loadRoleDetails() {
+            const errorMessage = document.getElementById("error-message");
+
+            try {
+                const roleResponse = await fetch(`/api/roles/${roleId}`);
+                const analysisResponse =
+                    await fetch(`/api/roles/${roleId}/analysis`);
+
+                if (!roleResponse.ok || !analysisResponse.ok) {
+                    throw new Error("Could not load role details.");
+                }
+
+                const role = await roleResponse.json();
+                const analysis = await analysisResponse.json();
+
+                document.getElementById("role-title").textContent =
+                    role.title;
+
+                document.getElementById("role-department").textContent =
+                    `${role.department} · ${role.industry}`;
+
+                document.getElementById("role-description").textContent =
+                    role.description || "No description available.";
+
+                document.getElementById("future-profile").textContent =
+                    role.future_profile || "No future profile available.";
+
+                document.getElementById("average-exposure").textContent =
+                    analysis.average_exposure;
+
+                document.getElementById("average-automation").textContent =
+                    analysis.average_automation;
+
+                document.getElementById("average-augmentation").textContent =
+                    analysis.average_augmentation;
+
+                document.getElementById("high-exposure-count").textContent =
+                    analysis.high_exposure_count;
+
+                const processesContainer =
+                    document.getElementById("processes");
+
+                processesContainer.innerHTML = "";
+
+                role.processes.forEach((process) => {
+                    const processElement = document.createElement("section");
+                    processElement.className = "process";
+
+                    processElement.innerHTML = `
+                        <h3>${process.name}</h3>
+                        <p>${process.description || ""}</p>
+                    `;
+
+                    process.activities.forEach((activity) => {
+                        const assessment = activity.assessment;
+
+                        const activityElement =
+                            document.createElement("article");
+
+                        activityElement.className = "activity";
+
+                        activityElement.innerHTML = `
+                            <h4>${activity.name}</h4>
+                            <p>${activity.description || ""}</p>
+                            <p>
+                                <strong>Frequency:</strong>
+                                ${activity.frequency || "Not specified"}
+                            </p>
+                            <p>
+                                <strong>Exposure:</strong>
+                                ${assessment.exposure_score}/100
+                            </p>
+                            <p>
+                                <strong>Category:</strong>
+                                ${assessment.exposure_category}
+                            </p>
+                            <p>
+                                <strong>Likely impact:</strong>
+                                ${assessment.impact_type}
+                            </p>
+                            <p>
+                                <strong>Reasoning:</strong>
+                                ${assessment.reasoning}
+                            </p>
+                        `;
+
+                        processElement.appendChild(activityElement);
+                    });
+
+                    processesContainer.appendChild(processElement);
+                });
+            } catch (error) {
+                errorMessage.textContent = error.message;
+            }
+        }
+
+        loadRoleDetails();
+    </script>
 </body>
 </html>
