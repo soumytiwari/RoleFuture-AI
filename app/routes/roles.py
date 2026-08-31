@@ -1,7 +1,14 @@
 from fastapi import APIRouter, HTTPException
 
 from app.database import SessionLocal
-from app.models import Role, Activity, ActivityAssessment, Process
+from app.models import (
+    Activity,
+    ActivityAssessment,
+    FutureResponsibility,
+    Process,
+    Role,
+    RoleSkill,
+)
 
 from app.services.scoring import calculate_role_analysis
 
@@ -103,6 +110,43 @@ def get_role(role_id: int):
                 }
             )
 
+        responsibilities = (
+            db.query(FutureResponsibility)
+            .filter(FutureResponsibility.role_id == role_id)
+            .order_by(FutureResponsibility.priority.desc())
+            .all()
+        )
+
+        role_skills = (
+            db.query(RoleSkill)
+            .filter(RoleSkill.role_id == role_id)
+            .order_by(RoleSkill.importance.desc())
+            .all()
+        )
+
+        responsibility_data = [
+            {
+                "id": responsibility.id,
+                "responsibility": responsibility.responsibility,
+                "description": responsibility.description,
+                "priority": responsibility.priority,
+            }
+            for responsibility in responsibilities
+        ]
+
+        skill_data = [
+            {
+                "id": role_skill.skill.id,
+                "name": role_skill.skill.name,
+                "category": role_skill.skill.category,
+                "description": role_skill.skill.description,
+                "importance": role_skill.importance,
+                "reason": role_skill.reason,
+            }
+            for role_skill in role_skills
+        ]
+
+
         return {
             "id": role.id,
             "title": role.title,
@@ -110,6 +154,8 @@ def get_role(role_id: int):
             "industry": role.industry,
             "description": role.description,
             "future_profile": role.future_profile,
+            "future_responsibilities": responsibility_data,
+            "future_skills": skill_data,
             "processes": process_data,
             "analysis": {
                 "activity_count": role_analysis.activity_count,
