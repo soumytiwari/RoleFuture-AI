@@ -4,20 +4,231 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page_title }}</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1f2933;
+        }
+
+        header {
+            padding: 24px 40px;
+            background: #172554;
+            color: white;
+        }
+
+        header h1 {
+            margin: 0 0 6px;
+        }
+
+        header p {
+            margin: 0;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 32px auto;
+            padding: 0 20px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 24px 0 32px;
+        }
+
+        .card {
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #00000012;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 15px;
+            color: #52606d;
+        }
+
+        .card p {
+            margin-bottom: 0;
+            font-size: 28px;
+            font-weight: bold;
+            color: #172554;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #00000012;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: #eef2ff;
+        }
+
+        .error {
+            color: #b91c1c;
+        }
+
+        @media (max-width: 800px) {
+            .cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 500px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
-        <h1>{{ page_title }}</h1>
         <h1>RoleFuture AI</h1>
         <p>Role-Level AI Intelligence</p>
     </header>
+
     <main>
-        <p>Welcome to the RoleFuture AI Dashboard!</p>
         <h2>Explore how AI may transform business roles</h2>
 
-        <section>
-            <p>Dashboard data will appear here.</p>
+        <section class="cards">
+            <div class="card">
+                <h3>Roles Analysed</h3>
+                <p id="role-count">—</p>
+            </div>
+
+            <div class="card">
+                <h3>Average Change Score</h3>
+                <p id="average-score">—</p>
+            </div>
+
+            <div class="card">
+                <h3>High-Exposure Activities</h3>
+                <p id="high-exposure-count">—</p>
+            </div>
+
+            <div class="card">
+                <h3>Activities Analysed</h3>
+                <p id="activity-count">—</p>
+            </div>
         </section>
+
+        <h2>Role impact ranking</h2>
+
+        <p id="loading-message">Loading ranking data...</p>
+        <p id="error-message" class="error"></p>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Change Score</th>
+                        <th>Exposure</th>
+                        <th>Automation</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="ranking-body"></tbody>
+            </table>
+        </div>
     </main>
+
+    <script>
+        async function loadDashboard() {
+            const loadingMessage = document.getElementById("loading-message");
+            const errorMessage = document.getElementById("error-message");
+
+            try {
+                const response = await fetch("/api/rankings");
+
+                if (!response.ok) {
+                    throw new Error("Could not load ranking data.");
+                }
+
+                const rankings = await response.json();
+
+                document.getElementById("role-count").textContent =
+                    rankings.length;
+
+                const averageScore = rankings.length
+                    ? rankings.reduce(
+                        (total, item) => total + item.role_change_score,
+                        0
+                    ) / rankings.length
+                    : 0;
+
+                const highExposureCount = rankings.reduce(
+                    (total, item) => total + item.high_exposure_count,
+                    0
+                );
+
+                const activityCount = rankings.reduce(
+                    (total, item) => total + item.activity_count,
+                    0
+                );
+
+                document.getElementById("average-score").textContent =
+                    averageScore.toFixed(1);
+
+                document.getElementById("high-exposure-count").textContent =
+                    highExposureCount;
+
+                document.getElementById("activity-count").textContent =
+                    activityCount;
+
+                const rankingBody = document.getElementById("ranking-body");
+
+                rankings.forEach((item) => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${item.rank}</td>
+                        <td>${item.title}</td>
+                        <td>${item.department}</td>
+                        <td>${item.role_change_score}</td>
+                        <td>${item.average_exposure}</td>
+                        <td>${item.average_automation}</td>
+                        <td>
+                            <a href="/roles/${item.role_id}">View</a>
+                        </td>
+                    `;
+
+                    rankingBody.appendChild(row);
+                });
+
+                loadingMessage.textContent = "";
+            } catch (error) {
+                loadingMessage.textContent = "";
+                errorMessage.textContent = error.message;
+            }
+        }
+
+        loadDashboard();
+    </script>
 </body>
 </html>

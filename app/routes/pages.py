@@ -15,3 +15,15 @@ def dashboard(request: Request):
             "page_title": "RoleFuture AI Dashboard",
         },
     )
+
+
+@router.get("/roles/{role_id}")
+def role_detail_page(request: Request, role_id: int):
+    return templates.TemplateResponse(
+        request=request,
+        name="role_detail.html",
+        context={
+            "page_title": "Role Details",
+            "role_id": role_id,
+        },
+    )
