@@ -1,4 +1,4 @@
-# RoleFuture AI - Analysis Methodology
+# RoleFuture AI — Analysis Methodology
 
 ## Purpose
 
@@ -20,7 +20,6 @@ Role
             ├── Augmentation potential
             └── Impact classification
 ```
-```
 
 ## Assessment Factors
 
@@ -41,10 +40,10 @@ For factors that reduce AI exposure, the scoring engine reverses the value:
 ```text
 Adjusted value = 6 - original value
 ```
-```
 
 This applies to:
-- Human judgement requirement
+
+- Human judgment requirement
 - Physical dependency
 - Sensitivity and complexity
 
@@ -57,9 +56,8 @@ Each factor is converted from the 1–5 scale to a 0–100 scale:
 ```text
 Normalized score = ((factor value - 1) / 4) × 100
 ```
-```
 
-The final exposure score is: 
+The final exposure score is:
 
 ```text
 Average of:
@@ -71,16 +69,15 @@ Average of:
 - Reversed physical dependency
 - Reversed sensitivity and complexity
 ```
-```
 
 ## Exposure Categories
 
-| Score       | Category    |
-| ------------ | ---------   |
-| 0-24.99     | Low   |
-| 25-49.99    | Moderate    |
-| 50-74.99    | High        |
-| 75-100      | Very High   |
+| Score | Category |
+|---:|---|
+| 0–24.99 | Low |
+| 25–49.99 | Moderate |
+| 50–74.99 | High |
+| 75–100 | Very High |
 
 ## Automation Score
 
@@ -91,7 +88,6 @@ Automation potential uses the following weighted formula:
 25% Digital data availability
 25% Rule-based potential
 20% Language intensity
-```
 ```
 
 This score is higher when an activity is repetitive, digital, structured, and suitable for predictable processing.
@@ -106,7 +102,6 @@ Augmentation potential uses the following weighted formula:
 20% Digital data availability
 20% Rule-based potential
 ```
-```
 
 This score represents the potential for AI to assist a person with analysis, preparation, drafting, detection, or recommendations while human judgment remains involved.
 
@@ -114,10 +109,10 @@ This score represents the potential for AI to assist a person with analysis, pre
 
 The application classifies each activity using these rules:
 
-1. If exposure is below 30, the activity is classified as `Primarily Human-Led` .
-2. If automation is at least 10 points higher than augmentation, the activity is classified as `Automated` .
-3. If augmentation is equal to or higher than automation, the activity is classified as `Augmented` .
-4. Otherwise, the activity is classified as `Primarily Human-Led` .
+1. If exposure is below 30, the activity is classified as `Primarily Human-Led`.
+2. If automation is at least 10 points higher than augmentation, the activity is classified as `Automated`.
+3. If augmentation is equal to or higher than automation, the activity is classified as `Augmented`.
+4. Otherwise, the activity is classified as `Primarily Human-Led`.
 
 ## Role-Level Analysis
 
@@ -134,6 +129,7 @@ The dashboard and ranking views use these stored activity-level results rather t
 ## Explainability
 
 Each activity result includes:
+
 - The original assessment factors
 - Calculated scores
 - Exposure category
@@ -145,6 +141,7 @@ The reasoning explains which factors influenced the result. It is an assessment 
 ## Data Traceability
 
 The application stores:
+
 - Roles
 - Processes
 - Activities
@@ -155,7 +152,6 @@ The application stores:
 - Evidence or supporting assumptions where available
 
 The scoring engine calculates the main results in Python. Any future language-model integration will only explain or summarize these structured results and will not control the core scores.
-
 
 ## Assumptions
 
@@ -170,4 +166,3 @@ The scoring engine calculates the main results in Python. Any future language-mo
 The quality of the analysis depends on the quality of the role and activity data. The current dataset represents common corporate-service activities and does not represent every organization.
 
 The scoring model is transparent and consistent, but it is not a labour-market prediction model. It should support workforce planning and reskilling discussions rather than replace professional judgment.
-
