@@ -1,15 +1,16 @@
-# app/services/scoring.py
+"""Transparent scoring engine for activity- and role-level AI impact."""
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any
 
-from datetime import datetime, timezone
+from app.models import Activity, ActivityAssessment, Process
 
-from app.models import ActivityAssessment, Activity, Process
+MIN_FACTOR = 1
+MAX_FACTOR = 5
 
 
-# Activity score is a structured representation of the calculated scores and classifications for an activity assessment.
-@dataclass
+@dataclass(frozen=True)
 class ActivityScore:
     exposure_score: float
     automation_score: float
@@ -19,12 +20,32 @@ class ActivityScore:
     reasoning: str
 
 
+@dataclass(frozen=True)
+class RoleAnalysis:
+    role_id: int
+    activity_count: int
+    average_exposure: float
+    average_automation: float
+    average_augmentation: float
+    high_exposure_count: int
+
+
+def _validate_factor(value: int | float) -> float:
+    numeric = float(value)
+    if not MIN_FACTOR <= numeric <= MAX_FACTOR:
+        raise ValueError(f"Assessment factors must be between {MIN_FACTOR} and {MAX_FACTOR}.")
+    return numeric
+
+
 def _to_score(value: int | float) -> float:
     """Convert a 1-to-5 factor into a 0-to-100 score."""
-    return ((float(value) - 1) / 4) * 100
+    numeric = _validate_factor(value)
+    return ((numeric - 1) / 4) * 100
 
 
 def _average(values: list[float]) -> float:
+    if not values:
+        raise ValueError("Cannot calculate an average from an empty list.")
     return sum(values) / len(values)
 
 
@@ -43,22 +64,12 @@ def classify_impact(
     augmentation_score: float,
     exposure_score: float,
 ) -> str:
-    """
-    Classify the likely type of AI impact.
-
-    Automation wins when automation potential is substantially higher.
-    Augmentation wins when human judgment and AI assistance are both important.
-    Otherwise, the activity remains primarily human-led.
-    """
     if exposure_score < 30:
         return "Primarily Human-Led"
-
     if automation_score >= augmentation_score + 10:
         return "Automated"
-
     if augmentation_score >= automation_score:
         return "Augmented"
-
     return "Primarily Human-Led"
 
 
@@ -78,9 +89,13 @@ def build_reasoning(
 
     if assessment.digital_data_availability >= 4:
         reasons.append("strong digital-data availability")
+    elif assessment.digital_data_availability <= 2:
+        reasons.append("limited digital-data availability")
 
     if assessment.rule_based_potential >= 4:
         reasons.append("high rule-based potential")
+    elif assessment.rule_based_potential <= 2:
+        reasons.append("low rule-based potential")
 
     if assessment.language_intensity >= 4:
         reasons.append("substantial language or document content")
@@ -101,8 +116,8 @@ def build_reasoning(
 
     if impact_type == "Automated":
         conclusion = (
-            "The activity has strong potential for automated processing "
-            "because it is relatively repeatable, structured, or rule-based."
+            "The activity has strong potential for automated processing because "
+            "it is relatively repeatable, structured, or rule-based."
         )
     elif impact_type == "Augmented":
         conclusion = (
@@ -111,28 +126,20 @@ def build_reasoning(
         )
     else:
         conclusion = (
-            "The activity is likely to remain primarily human-led, although "
-            "AI may still provide supporting information."
+            "The activity is likely to remain primarily human-led, although AI "
+            "may still provide supporting information."
         )
 
     return (
         f"The assessment shows {factor_text}. "
         f"These factors produce an exposure score of {exposure_score:.1f}/100, "
         f"an automation score of {automation_score:.1f}/100, and an "
-        f"augmentation score of {augmentation_score:.1f}/100. "
-        f"{conclusion}"
+        f"augmentation score of {augmentation_score:.1f}/100. {conclusion}"
     )
 
 
 def calculate_activity_score(assessment: Any) -> ActivityScore:
-    """
-    Calculate transparent scores for one ActivityAssessment.
-
-    All input factors are expected to use a 1-to-5 scale.
-    """
-
-    # AI exposure considers all seven factors.
-    # Human judgment, physical dependency, and complexity reduce exposure.
+    """Calculate transparent scores for one 1-to-5 activity assessment."""
     exposure_score = _average(
         [
             _to_score(assessment.repetitiveness),
@@ -162,21 +169,8 @@ def calculate_activity_score(assessment: Any) -> ActivityScore:
     exposure_score = round(exposure_score, 2)
     automation_score = round(automation_score, 2)
     augmentation_score = round(augmentation_score, 2)
-
     exposure_category = classify_exposure(exposure_score)
-    impact_type = classify_impact(
-        automation_score,
-        augmentation_score,
-        exposure_score,
-    )
-
-    reasoning = build_reasoning(
-        assessment=assessment,
-        exposure_score=exposure_score,
-        automation_score=automation_score,
-        augmentation_score=augmentation_score,
-        impact_type=impact_type,
-    )
+    impact_type = classify_impact(automation_score, augmentation_score, exposure_score)
 
     return ActivityScore(
         exposure_score=exposure_score,
@@ -184,16 +178,17 @@ def calculate_activity_score(assessment: Any) -> ActivityScore:
         augmentation_score=augmentation_score,
         exposure_category=exposure_category,
         impact_type=impact_type,
-        reasoning=reasoning,
+        reasoning=build_reasoning(
+            assessment,
+            exposure_score,
+            automation_score,
+            augmentation_score,
+            impact_type,
+        ),
     )
 
-# here we saving the assessment to the database after calculating the score
 
-def analyze_and_save_assessment(db, assessment):
-    """Calculate an assessment and save the results to SQLite."""
-
-    result = calculate_activity_score(assessment)
-
+def _apply_score(assessment: ActivityAssessment, result: ActivityScore) -> None:
     assessment.exposure_score = result.exposure_score
     assessment.automation_score = result.automation_score
     assessment.augmentation_score = result.augmentation_score
@@ -202,46 +197,25 @@ def analyze_and_save_assessment(db, assessment):
     assessment.reasoning = result.reasoning
     assessment.analyzed_at = datetime.now(timezone.utc)
 
+
+def analyze_and_save_assessment(db, assessment: ActivityAssessment):
+    result = calculate_activity_score(assessment)
+    _apply_score(assessment, result)
     db.commit()
     db.refresh(assessment)
-
     return assessment
 
 
 def analyze_all_assessments(db):
-    """Calculate and save every activity assessment."""
-
     assessments = db.query(ActivityAssessment).all()
-
     for assessment in assessments:
-        result = calculate_activity_score(assessment)
-
-        assessment.exposure_score = result.exposure_score
-        assessment.automation_score = result.automation_score
-        assessment.augmentation_score = result.augmentation_score
-        assessment.exposure_category = result.exposure_category
-        assessment.impact_type = result.impact_type
-        assessment.reasoning = result.reasoning
-        assessment.analyzed_at = datetime.now(timezone.utc)
-
+        _apply_score(assessment, calculate_activity_score(assessment))
     db.commit()
-
     return assessments
 
-# Role Analysis is a structured representation of the aggregated scores and classifications for all activities in a role.
-@dataclass
-class RoleAnalysis:
-    role_id: int
-    activity_count: int
-    average_exposure: float
-    average_automation: float
-    average_augmentation: float
-    high_exposure_count: int
 
-# This function does not change the database. It reads the saved activity scores and creates a role summary.
 def calculate_role_analysis(db, role_id: int) -> RoleAnalysis:
-    """Calculate summary scores for one role."""
-
+    """Calculate role-level metrics and persist any missing activity scores."""
     assessments = (
         db.query(ActivityAssessment)
         .join(Activity, ActivityAssessment.activity_id == Activity.id)
@@ -253,38 +227,39 @@ def calculate_role_analysis(db, role_id: int) -> RoleAnalysis:
     if not assessments:
         raise ValueError(f"No assessments found for role {role_id}")
 
-    exposure_scores = [
-        assessment.exposure_score
-        for assessment in assessments
-        if assessment.exposure_score is not None
-    ]
+    changed = False
+    for assessment in assessments:
+        if (
+            assessment.exposure_score is None
+            or assessment.automation_score is None
+            or assessment.augmentation_score is None
+            or assessment.exposure_category is None
+            or assessment.impact_type is None
+            or assessment.reasoning is None
+        ):
+            _apply_score(assessment, calculate_activity_score(assessment))
+            changed = True
 
-    automation_scores = [
-        assessment.automation_score
-        for assessment in assessments
-        if assessment.automation_score is not None
-    ]
+    if changed:
+        db.commit()
 
-    augmentation_scores = [
-        assessment.augmentation_score
-        for assessment in assessments
-        if assessment.augmentation_score is not None
-    ]
+    exposure_scores = [a.exposure_score for a in assessments if a.exposure_score is not None]
+    automation_scores = [a.automation_score for a in assessments if a.automation_score is not None]
+    augmentation_scores = [a.augmentation_score for a in assessments if a.augmentation_score is not None]
+
+    if not exposure_scores or not automation_scores or not augmentation_scores:
+        raise ValueError(f"Incomplete analysis data for role {role_id}")
 
     high_exposure_count = sum(
-        assessment.exposure_category in {"High", "Very High"}
-        for assessment in assessments
+        a.exposure_category in {"High", "Very High"}
+        for a in assessments
     )
 
     return RoleAnalysis(
         role_id=role_id,
         activity_count=len(assessments),
-        average_exposure=round(sum(exposure_scores) / len(exposure_scores), 2),
-        average_automation=round(
-            sum(automation_scores) / len(automation_scores), 2
-        ),
-        average_augmentation=round(
-            sum(augmentation_scores) / len(augmentation_scores), 2
-        ),
+        average_exposure=round(_average(exposure_scores), 2),
+        average_automation=round(_average(automation_scores), 2),
+        average_augmentation=round(_average(augmentation_scores), 2),
         high_exposure_count=high_exposure_count,
     )

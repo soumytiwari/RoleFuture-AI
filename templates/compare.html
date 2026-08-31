@@ -4,258 +4,127 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page_title }}</title>
-
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            color: #1f2933;
-        }
-
-        header {
-            padding: 24px 40px;
-            background: #172554;
-            color: white;
-        }
-
-        nav {
-            margin-bottom: 16px;
-        }
-
-        .nav-link {
-            margin-right: 18px;
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-
-        header a {
-            color: white;
-        }
-
-        main {
-            max-width: 1000px;
-            margin: 32px auto;
-            padding: 0 20px;
-        }
-
-        .controls,
-        .results {
-            background: white;
-            padding: 24px;
-            margin-top: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px #00000012;
-        }
-
-        .controls {
-            display: flex;
-            gap: 16px;
-            align-items: end;
-        }
-
-        label {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            flex: 1;
-        }
-
-        select,
-        button {
-            padding: 10px;
-            font-size: 16px;
-        }
-
-        button {
-            border: 0;
-            border-radius: 6px;
-            background: #1d4ed8;
-            color: white;
-            cursor: pointer;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        th {
-            background: #eef2ff;
-        }
-
-        .error {
-            color: #b91c1c;
-        }
-
-        @media (max-width: 700px) {
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-        }
+        :root { --navy:#172554; --ink:#1f2937; --muted:#64748b; --bg:#f4f6f8; --card:#fff; --border:#e2e8f0; --accent:#4f46e5; }
+        * { box-sizing:border-box; } body { margin:0; font-family:Arial,sans-serif; background:var(--bg); color:var(--ink); }
+        header { padding:24px 40px; background:var(--navy); color:white; } nav { margin-bottom:16px; }
+        .nav-link { margin-right:18px; color:white; text-decoration:none; font-weight:bold; }
+        main { max-width:1100px; margin:32px auto; padding:0 20px 48px; }
+        .card { background:var(--card); padding:20px; margin:16px 0; border-radius:12px; border:1px solid var(--border); box-shadow:0 2px 8px #0000000c; }
+        .controls { display:grid; grid-template-columns:1fr 1fr auto; gap:12px; align-items:end; }
+        label { display:block; font-weight:bold; margin-bottom:6px; } select,button { width:100%; padding:11px; border-radius:8px; border:1px solid #cbd5e1; font:inherit; }
+        button { background:var(--accent); color:white; border:0; cursor:pointer; font-weight:bold; }
+        button:disabled { opacity:.6; cursor:wait; }
+        table { width:100%; border-collapse:collapse; } th,td { padding:13px; text-align:left; border-bottom:1px solid var(--border); } th { background:#eef2ff; }
+        .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; } .metric { padding:14px; background:#f8fafc; border:1px solid var(--border); border-radius:8px; }
+        .metric strong { display:block; color:var(--muted); font-size:13px; margin-bottom:4px; } .metric span { font-size:22px; font-weight:bold; }
+        .ai-source { color:var(--muted); font-size:13px; } .error { color:#b91c1c; }
+        @media (max-width:700px) { .controls,.grid { grid-template-columns:1fr; } header { padding:20px; } }
     </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <a href="/" class="nav-link">Dashboard</a>
-            <a href="/compare" class="nav-link">Compare roles</a>
-        </nav>
-
-        <h1>Compare roles</h1>
-    </header>
-
-
-    <main>
-        <section class="controls">
-            <label>
-                Role 1
-                <select id="role-1"></select>
-            </label>
-
-            <label>
-                Role 2
-                <select id="role-2"></select>
-            </label>
-
+<header>
+    <nav><a href="/" class="nav-link">Dashboard</a><a href="/compare" class="nav-link">Compare roles</a></nav>
+    <h1>Compare Roles</h1>
+    <p>Compare the calculated AI impact of two roles and explain the main differences.</p>
+</header>
+<main>
+    <section class="card">
+        <div class="controls">
+            <div><label for="role-1">Role 1</label><select id="role-1"></select></div>
+            <div><label for="role-2">Role 2</label><select id="role-2"></select></div>
             <button id="compare-button">Compare</button>
-        </section>
+        </div>
+        <p id="message" class="error"></p>
+    </section>
 
-        <p id="message"></p>
+    <section class="card" id="comparison-card" hidden>
+        <h2 id="comparison-title">Comparison</h2>
+        <table><thead><tr><th>Metric</th><th id="role-one-heading">Role 1</th><th id="role-two-heading">Role 2</th><th>Difference (Role 2 - Role 1)</th></tr></thead>
+        <tbody id="comparison-body"></tbody></table>
+    </section>
 
-        <section class="results">
-            <h2>Comparison results</h2>
+    <section class="card" id="ai-card" hidden>
+        <h2>AI Comparison Explanation</h2>
+        <p id="ai-source" class="ai-source"></p>
+        <p class="ai-source">Numerical comparisons come from the deterministic backend. The language model only explains the supplied comparison facts.</p>
+        <div id="ai-content">Generating...</div>
+    </section>
+</main>
+<script>
+    const roleOneSelect = document.getElementById("role-1");
+    const roleTwoSelect = document.getElementById("role-2");
+    const compareButton = document.getElementById("compare-button");
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Metric</th>
-                        <th id="role-1-heading">Role 1</th>
-                        <th id="role-2-heading">Role 2</th>
-                    </tr>
-                </thead>
-                <tbody id="comparison-body">
-                    <tr>
-                        <td colspan="3">Select two roles and click Compare.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-    </main>
+    function escapeHtml(value) { const div = document.createElement("div"); div.textContent = String(value ?? ""); return div.innerHTML; }
+    function list(items) { return (items || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("") || "<li>None identified.</li>"; }
 
-    <script>
-        const roleOneSelect = document.getElementById("role-1");
-        const roleTwoSelect = document.getElementById("role-2");
-        const compareButton = document.getElementById("compare-button");
+    async function loadRoles() {
+        const response = await fetch("/api/roles");
+        if (!response.ok) throw new Error("Could not load roles.");
+        const roles = await response.json();
+        roleOneSelect.innerHTML = ""; roleTwoSelect.innerHTML = "";
+        roles.forEach((role, index) => {
+            const option1 = new Option(`${role.title} — ${role.department}`, role.id);
+            const option2 = new Option(`${role.title} — ${role.department}`, role.id);
+            roleOneSelect.add(option1); roleTwoSelect.add(option2);
+            if (index === 1) roleTwoSelect.value = role.id;
+        });
+        if (roles.length < 2) throw new Error("At least two roles are required for comparison.");
+    }
+
+    function renderComparison(result) {
+        const a = result.role_1, b = result.role_2, d = result.differences;
+        document.getElementById("comparison-card").hidden = false;
+        document.getElementById("comparison-title").textContent = `${a.title} vs ${b.title}`;
+        document.getElementById("role-one-heading").textContent = a.title;
+        document.getElementById("role-two-heading").textContent = b.title;
+        document.getElementById("comparison-body").innerHTML = `
+            <tr><td>Average exposure</td><td>${a.average_exposure}</td><td>${b.average_exposure}</td><td>${d.exposure}</td></tr>
+            <tr><td>Average automation</td><td>${a.average_automation}</td><td>${b.average_automation}</td><td>${d.automation}</td></tr>
+            <tr><td>Average augmentation</td><td>${a.average_augmentation}</td><td>${b.average_augmentation}</td><td>${d.augmentation}</td></tr>
+            <tr><td>Activities analysed</td><td>${a.activity_count}</td><td>${b.activity_count}</td><td>${b.activity_count - a.activity_count}</td></tr>
+            <tr><td>High-exposure activities</td><td>${a.high_exposure_count}</td><td>${b.high_exposure_count}</td><td>${d.high_exposure_count}</td></tr>
+        `;
+    }
+
+    async function loadAiComparison() {
+        const a = roleOneSelect.value, b = roleTwoSelect.value;
+        document.getElementById("ai-card").hidden = false;
+        document.getElementById("ai-content").textContent = "Generating AI comparison...";
+        const response = await fetch(`/api/compare/explanation?role_1_id=${a}&role_2_id=${b}`);
+        if (!response.ok) throw new Error("Could not generate AI comparison.");
+        const data = await response.json();
+        const ex = data.explanation || {};
+        document.getElementById("ai-source").textContent = data.source === "local_ai" ? `Generated by local model: ${data.model || "Ollama"}` : "Deterministic fallback explanation (local model unavailable)";
+        document.getElementById("ai-content").innerHTML = `
+            <h3>Summary</h3><p>${escapeHtml(ex.summary || "No summary returned.")}</p>
+            <div class="grid"><div class="metric"><strong>Role 1 strengths</strong><ul>${list(ex.role_1_strengths)}</ul></div><div class="metric"><strong>Role 2 strengths</strong><ul>${list(ex.role_2_strengths)}</ul></div></div>
+            <h3>Main differences</h3><ul>${list(ex.main_differences)}</ul>
+            <h3>Shared future skills</h3><ul>${list(ex.shared_future_skills)}</ul>
+            <h3>Priority message</h3><p>${escapeHtml(ex.priority_message || "No priority message returned.")}</p>
+        `;
+    }
+
+    async function compareRoles() {
         const message = document.getElementById("message");
-        const comparisonBody = document.getElementById("comparison-body");
-
-        async function loadRoles() {
-            const response = await fetch("/api/roles");
-
-            if (!response.ok) {
-                throw new Error("Could not load roles.");
-            }
-
-            const roles = await response.json();
-
-            roles.forEach((role) => {
-                const optionOne = new Option(role.title, role.id);
-                const optionTwo = new Option(role.title, role.id);
-
-                roleOneSelect.add(optionOne);
-                roleTwoSelect.add(optionTwo);
-            });
-
-            if (roles.length > 1) {
-                roleTwoSelect.selectedIndex = 1;
-            }
-        }
-
-        async function compareRoles() {
-            message.textContent = "Loading comparison...";
-            message.className = "";
-
-            const roleOneId = roleOneSelect.value;
-            const roleTwoId = roleTwoSelect.value;
-
-            const response = await fetch(
-                `/api/compare?role_1_id=${roleOneId}&role_2_id=${roleTwoId}`
-            );
-
+        compareButton.disabled = true; compareButton.textContent = "Comparing..."; message.textContent = "";
+        try {
+            if (roleOneSelect.value === roleTwoSelect.value) throw new Error("Please select two different roles.");
+            const response = await fetch(`/api/compare?role_1_id=${roleOneSelect.value}&role_2_id=${roleTwoSelect.value}`);
+            if (!response.ok) { const payload = await response.json().catch(() => ({})); throw new Error(payload.detail || "Could not compare the selected roles."); }
             const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.detail || "Comparison failed.");
-            }
-
-            document.getElementById("role-1-heading").textContent =
-                result.role_1.title;
-
-            document.getElementById("role-2-heading").textContent =
-                result.role_2.title;
-
-            const roleOne = result.role_1;
-            const roleTwo = result.role_2;
-
-            comparisonBody.innerHTML = `
-                <tr>
-                    <td>Average exposure</td>
-                    <td>${roleOne.average_exposure}</td>
-                    <td>${roleTwo.average_exposure}</td>
-                </tr>
-                <tr>
-                    <td>Average automation</td>
-                    <td>${roleOne.average_automation}</td>
-                    <td>${roleTwo.average_automation}</td>
-                </tr>
-                <tr>
-                    <td>Average augmentation</td>
-                    <td>${roleOne.average_augmentation}</td>
-                    <td>${roleTwo.average_augmentation}</td>
-                </tr>
-                <tr>
-                    <td>Activities analysed</td>
-                    <td>${roleOne.activity_count}</td>
-                    <td>${roleTwo.activity_count}</td>
-                </tr>
-                <tr>
-                    <td>High-exposure activities</td>
-                    <td>${roleOne.high_exposure_count}</td>
-                    <td>${roleTwo.high_exposure_count}</td>
-                </tr>
-                <tr>
-                    <td>Exposure difference</td>
-                    <td colspan="2">${result.differences.exposure}</td>
-                </tr>
-            `;
-
-            message.textContent = "";
-        }
-
-        compareButton.addEventListener("click", async () => {
-            try {
-                await compareRoles();
-            } catch (error) {
-                message.textContent = error.message;
-                message.className = "error";
-            }
-        });
-
-        loadRoles().catch((error) => {
+            renderComparison(result);
+            await loadAiComparison();
+        } catch (error) {
             message.textContent = error.message;
-            message.className = "error";
-        });
-    </script>
+        } finally {
+            compareButton.disabled = false; compareButton.textContent = "Compare";
+        }
+    }
+
+    compareButton.addEventListener("click", compareRoles);
+    loadRoles().catch((error) => document.getElementById("message").textContent = error.message);
+</script>
 </body>
 </html>

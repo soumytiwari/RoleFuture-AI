@@ -1,3 +1,5 @@
+"""SQLAlchemy model exports."""
+
 from app.models.activity import Activity
 from app.models.activity_assessment import ActivityAssessment
 from app.models.evidence import Evidence

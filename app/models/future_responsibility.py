@@ -12,11 +12,8 @@ class FutureResponsibility(Base):
         ForeignKey("roles.id"),
         nullable=False,
     )
-    responsibility: Mapped[str] = mapped_column(
-        String(250),
-        nullable=False,
-    )
+    responsibility: Mapped[str] = mapped_column(String(250), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     priority: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    role: Mapped["Role"] = relationship()
+    role: Mapped["Role"] = relationship(back_populates="future_responsibilities")

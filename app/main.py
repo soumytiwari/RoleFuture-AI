@@ -20,6 +20,16 @@ from app.routes.rankings import router as rankings_router
 from app.routes.compare import router as compare_router
 from app.routes.pages import router as pages_router
 
+
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)

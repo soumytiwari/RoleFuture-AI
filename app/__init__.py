@@ -1,0 +1,1 @@
+"""RoleFuture AI application package."""
