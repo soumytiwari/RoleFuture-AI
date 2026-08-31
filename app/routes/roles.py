@@ -21,6 +21,7 @@ def get_roles():
                 "department": role.department,
                 "industry": role.industry,
                 "description": role.description,
+                # "future_profile": role.future_profile,
             }
             for role in roles
         ]
