@@ -17,6 +17,7 @@ from app.models import (
 from app.routes.analysis import router as analysis_router
 from app.routes.roles import router as roles_router
 from app.routes.rankings import router as rankings_router
+from app.routes.compare import router as compare_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,7 +36,7 @@ app = FastAPI(
 app.include_router(analysis_router)
 app.include_router(roles_router)
 app.include_router(rankings_router)
-
+app.include_router(compare_router)
 
 @app.get("/api/health")
 def health_check():
