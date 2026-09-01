@@ -334,3 +334,8 @@ The application supports persistent create/read/update-style workflow (deletion 
 
 ### API for re-analysis
 `POST /api/roles/{role_id}/reanalyze` regenerates and saves the role profile. The request can include `department` and `description`; omitted values reuse the stored values. The response reports whether the latest generation used the local AI or deterministic fallback through the role's `creation_source`.
+
+# Deployment
+
+
+https://rolefuture-ai.onrender.com/
