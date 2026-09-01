@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; color: #1f2933; }
+        header { padding: 24px 40px; background: #172554; color: white; }
+        nav { margin-top: 16px; }
+        .nav-link { margin-right: 18px; color: white; text-decoration: none; font-weight: bold; }
+        main { max-width: 1100px; margin: 32px auto; padding: 0 20px 48px; }
+        .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0 32px; }
+        .card, .search-card { padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 8px #00000012; }
+        .card h3 { margin-top: 0; font-size: 15px; color: #52606d; }
+        .card p { margin-bottom: 0; font-size: 28px; font-weight: bold; color: #172554; }
+        .search-card { margin-bottom: 28px; }
+        .search-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+        input, select, button { padding: 11px; border-radius: 8px; border: 1px solid #cbd5e1; font: inherit; }
+        input, select { width: 100%; }
+        button { background: #4f46e5; color: white; border: 0; cursor: pointer; font-weight: bold; }
+        button:disabled { opacity: .6; cursor: wait; }
+        .results { margin-top: 14px; }
+        .results select { margin-bottom: 12px; }
+        .create-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #e5e7eb; }
+        .create-panel .full { grid-column: 1 / -1; }
+        .hint { color: #64748b; font-size: 14px; }
+        .success { color: #166534; font-weight: bold; }
+        .error { color: #b91c1c; }
+        .table-container { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 8px #00000012; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background: #eef2ff; }
+        @media (max-width: 800px) { .cards { grid-template-columns: repeat(2, 1fr); } .create-panel { grid-template-columns: 1fr; } .create-panel .full { grid-column: auto; } }
+        @media (max-width: 500px) { .cards { grid-template-columns: 1fr; } header { padding: 20px; } .search-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<header>
+    <h1>RoleFuture AI</h1>
+    <p>Role-Level AI Intelligence</p>
+    <nav>
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/compare" class="nav-link">Compare roles</a>
+    </nav>
+</header>
+
+<main>
+    <h2>Explore how AI may transform business roles</h2>
+
+    <section class="search-card">
+        <h2>Find or analyse a role</h2>
+        <p class="hint">Search the saved role library. If the role is not present, enter it below and the application will create, assess, and save it.</p>
+        <div class="search-row">
+            <input id="role-search" type="search" placeholder="e.g. Finance Analyst, Software Engineer, Nurse">
+            <button id="search-button">Search</button>
+        </div>
+        <div id="search-results" class="results" hidden>
+            <label for="matching-roles"><strong>Matching saved roles</strong></label>
+            <select id="matching-roles"></select>
+            <button id="open-role">Open selected role</button>
+        </div>
+        <div id="create-panel" class="create-panel" hidden>
+            <div>
+                <label for="new-department">Department (optional)</label>
+                <input id="new-department" placeholder="e.g. Engineering">
+            </div>
+            <div class="full">
+                <label for="new-description">What does this role generally do? (recommended for a new/unknown role)</label>
+                <input id="new-description" placeholder="A short description helps the system make more relevant activities and assessments.">
+            </div>
+            <div class="full">
+                <button id="create-role">Create and analyse this role</button>
+            </div>
+        </div>
+        <p id="role-action-message" class="hint"></p>
+    </section>
+
+    <section class="cards">
+        <div class="card"><h3>Roles Analysed</h3><p id="role-count">—</p></div>
+        <div class="card"><h3>Average Change Score</h3><p id="average-score">—</p></div>
+        <div class="card"><h3>High-Exposure Activities</h3><p id="high-exposure-count">—</p></div>
+        <div class="card"><h3>Activities Analysed</h3><p id="activity-count">—</p></div>
+    </section>
+
+    <h2>Role impact ranking</h2>
+    <p id="loading-message">Loading ranking data...</p>
+    <p id="error-message" class="error"></p>
+    <div class="table-container">
+        <table>
+            <thead><tr><th>Rank</th><th>Role</th><th>Department</th><th>Change Score</th><th>Exposure</th><th>Automation</th><th>Action</th></tr></thead>
+            <tbody id="ranking-body"></tbody>
+        </table>
+    </div>
+</main>
+
+<script>
+    const searchInput = document.getElementById("role-search");
+    const searchButton = document.getElementById("search-button");
+    const results = document.getElementById("search-results");
+    const matchingRoles = document.getElementById("matching-roles");
+    const createPanel = document.getElementById("create-panel");
+    const message = document.getElementById("role-action-message");
+
+    function escapeHtml(value) {
+        const div = document.createElement("div");
+        div.textContent = String(value ?? "");
+        return div.innerHTML;
+    }
+
+    async function searchRoles() {
+        const query = searchInput.value.trim();
+        message.textContent = "";
+        message.className = "hint";
+        results.hidden = true;
+        createPanel.hidden = true;
+        if (!query) return;
+
+        const response = await fetch(`/api/roles/search?q=${encodeURIComponent(query)}`);
+        if (!response.ok) throw new Error("Could not search saved roles.");
+        const matches = await response.json();
+
+        if (matches.length) {
+            matchingRoles.innerHTML = matches.map(role => `<option value="${role.id}">${escapeHtml(role.title)} — ${escapeHtml(role.department)}</option>`).join("");
+            results.hidden = false;
+            if (matches[0].title.toLowerCase() === query.toLowerCase()) {
+                message.textContent = "This role is already saved. Select it and open the analysis.";
+            } else {
+                message.textContent = `${matches.length} saved role${matches.length === 1 ? "" : "s"} matched your search.`;
+            }
+        } else {
+            createPanel.hidden = false;
+            message.textContent = `No saved role matched “${query}”. You can create it now.`;
+        }
+    }
+
+    document.getElementById("open-role").addEventListener("click", () => {
+        if (matchingRoles.value) window.location.href = `/roles/${matchingRoles.value}`;
+    });
+
+    document.getElementById("create-role").addEventListener("click", async () => {
+        const title = searchInput.value.trim();
+        const department = document.getElementById("new-department").value.trim();
+        const description = document.getElementById("new-description").value.trim();
+        const button = document.getElementById("create-role");
+        if (!title) return;
+        button.disabled = true;
+        button.textContent = "Creating and analysing...";
+        message.className = "hint";
+        message.textContent = "Building the role profile and saving it...";
+        try {
+            const response = await fetch("/api/roles", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title, department: department || null, description: description || null })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.detail || "Could not create the role.");
+            message.className = "success";
+            message.textContent = data.message;
+            window.location.href = `/roles/${data.role.id}`;
+        } catch (error) {
+            message.className = "error";
+            message.textContent = error.message;
+        } finally {
+            button.disabled = false;
+            button.textContent = "Create and analyse this role";
+        }
+    });
+
+    searchButton.addEventListener("click", () => searchRoles().catch(error => {
+        message.className = "error";
+        message.textContent = error.message;
+    }));
+    searchInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") searchButton.click();
+    });
+
+    async function loadDashboard() {
+        const loadingMessage = document.getElementById("loading-message");
+        const errorMessage = document.getElementById("error-message");
+        try {
+            const response = await fetch("/api/rankings");
+            if (!response.ok) throw new Error("Could not load ranking data.");
+            const rankings = await response.json();
+            document.getElementById("role-count").textContent = rankings.length;
+            const averageScore = rankings.length ? rankings.reduce((total, item) => total + item.role_change_score, 0) / rankings.length : 0;
+            const highExposureCount = rankings.reduce((total, item) => total + item.high_exposure_count, 0);
+            const activityCount = rankings.reduce((total, item) => total + item.activity_count, 0);
+            document.getElementById("average-score").textContent = averageScore.toFixed(1);
+            document.getElementById("high-exposure-count").textContent = highExposureCount;
+            document.getElementById("activity-count").textContent = activityCount;
+            const rankingBody = document.getElementById("ranking-body");
+            rankingBody.innerHTML = rankings.map(item => `
+                <tr>
+                    <td>${item.rank}</td><td>${escapeHtml(item.title)}</td><td>${escapeHtml(item.department)}</td>
+                    <td>${item.role_change_score}</td><td>${item.average_exposure}</td><td>${item.average_automation}</td>
+                    <td><a href="/roles/${item.role_id}">View</a></td>
+                </tr>`).join("");
+            loadingMessage.textContent = "";
+        } catch (error) {
+            loadingMessage.textContent = "";
+            errorMessage.textContent = error.message;
+        }
+    }
+    loadDashboard();
+</script>
+</body>
+</html>
